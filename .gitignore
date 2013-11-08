@@ -1,6 +1,8 @@
-*.class
 
-# Package Files #
-*.jar
-*.war
-*.ear
+# eclipse ignore general
+.classpath
+target/
+.project
+.settings/
+test-output/
+mem:testdb.*
