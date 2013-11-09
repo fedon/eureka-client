@@ -8,6 +8,12 @@
     <name>hello</name>
     <dependencies>
         <dependency>
+            <groupId>org.fedon.discoverable</groupId>
+            <artifactId>eureka-client</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <!-- container  -->
+        <dependency>
             <groupId>org.glassfish.jersey.containers</groupId>
             <artifactId>jersey-container-grizzly2-http</artifactId>
             <version>${jersey-version}</version>

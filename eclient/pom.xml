@@ -32,6 +32,11 @@
             <artifactId>jersey-client</artifactId>
             <version>${jersey.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.media</groupId>
+            <artifactId>jersey-media-moxy</artifactId>
+            <version>${jersey.version}</version>
+        </dependency>
         <!-- Eureka -->
         <dependency>
             <groupId>com.netflix.eureka</groupId>
@@ -40,7 +45,7 @@
         </dependency>
         <dependency>
             <groupId>com.netflix.eureka</groupId>
-            <artifactId>eureka-resources</artifactId>
+            <artifactId>eureka-core</artifactId>
             <version>1.1.114</version>
         </dependency>
             

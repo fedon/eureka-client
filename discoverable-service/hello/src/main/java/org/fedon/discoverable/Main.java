@@ -1,40 +1,75 @@
 package org.fedon.discoverable;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.net.URI;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
+
+import com.netflix.appinfo.ApplicationInfoManager;
+import com.netflix.appinfo.EurekaInstanceConfig;
+import com.netflix.appinfo.InstanceInfo;
+import com.netflix.appinfo.InstanceInfo.InstanceStatus;
+import com.netflix.appinfo.MyDataCenterInstanceConfig;
+import com.netflix.config.DynamicPropertyFactory;
+import com.netflix.discovery.DefaultEurekaClientConfig;
+import com.netflix.discovery.DiscoveryManager;
 
 /**
  * Main class.
  *
  */
 public class Main {
+    private final static Log log = LogFactory.getLog(Main.class);
     // Base URI the Grizzly HTTP server will listen on
-    public static final String BASE_URI = "http://localhost:18080/discovered/";
+    public static final String baseUri = "http://localhost:";
+    public static final String appName = Hello.class.getPackage().toString(); // in the real app this approach will require to limit one service to
+                                                                              // one package in the API project
+
+    private static final DynamicPropertyFactory configInstance = com.netflix.config.DynamicPropertyFactory.getInstance();
 
     /**
      * Starts Grizzly HTTP server exposing JAX-RS resources defined in this application.
      * @return Grizzly HTTP server.
      */
     public static HttpServer startServer() {
+        log.info("app name: " + appName);
         // create a resource config that scans for JAX-RS resources and providers
         // in org.fedon.discoverable package
-        final ResourceConfig rc = new ResourceConfig().packages("org.fedon.discoverable.resource");
+        final ResourceConfig rc = new ResourceConfig().packages(appName);
 
-        // uncomment the following line if you want to enable
-        // support for JSON on the service (you also have to uncomment
-        // dependency on jersey-media-json module in pom.xml)
-        // --
-        // rc.addModule(org.glassfish.jersey.media.json.JsonJaxbModule);
+        // support for JSON on the service provided by jersey-media-moxy package
 
         // create and start a new instance of grizzly http server
         // exposing the Jersey application at BASE_URI
-        HttpServer server = GrizzlyHttpServerFactory.createHttpServer(URI.create(BASE_URI), rc);
+        HttpServer server = GrizzlyHttpServerFactory.createHttpServer(URI.create(baseUri + configInstance.getStringProperty("server.port", "18080")),
+                rc);
+        try {
+            registerWithEureka(appName, appName);
+        } catch (SecurityException e) {
+            log.warn("app registration failed", e);
+        } catch (IllegalArgumentException e) {
+            log.warn("app registration failed", e);
+        } catch (NoSuchFieldException e) {
+            log.warn("app registration failed", e);
+        } catch (IllegalAccessException e) {
+            log.warn("app registration failed", e);
+        }
+        // HttpHandler handler = server.getServerConfiguration().getHttpHandlers().keySet().iterator().next(); // may be used to reconstruct base URI
+        // Set<Resource> resources = rc.getResources();
+        // for (Resource resource : resources) {
+        // String path = resource.getPath();
+        // String perResourceUri = baseUri + path;
+        // log.info("base uri: " + perResourceUri);
+        // String vipAddress = appName + path;
+        // log.info("vip address: " + vipAddress);
+        // EurekaClientJersey.registerInstance(appName, perResourceUri, vipAddress, false);
+        // }
 
-        // TODO register to eureka here
         return server;
     }
 
@@ -45,10 +80,38 @@ public class Main {
      */
     public static void main(String[] args) throws IOException {
         final HttpServer server = startServer();
-        System.out.println(String.format("Jersey app started with WADL available at "
-                + "%sapplication.wadl\nHit enter to stop it...", BASE_URI));
+        log.info(String.format("Jersey app started with WADL available at "
+                + "%sapplication.wadl\nHit enter to stop it...", baseUri));
         System.in.read();
         server.stop();
     }
-}
 
+    static void registerWithEureka(String appName, String vipAddress) throws SecurityException, NoSuchFieldException,
+            IllegalArgumentException, IllegalAccessException {
+        // Register with Eureka
+        EurekaInstanceConfig instanceConfig = new MyDataCenterInstanceConfig();
+        // instanceConfig.
+        DiscoveryManager.getInstance().initComponent(instanceConfig, new DefaultEurekaClientConfig());
+
+        // TODO setup runtime values
+        String appNameFieldName = "appName";
+        String vipAddressFieldName = "vipAddress";
+        InstanceInfo info = ApplicationInfoManager.getInstance().getInfo();
+        Field fAppName = InstanceInfo.class.getDeclaredField(appNameFieldName);
+        fAppName.setAccessible(true);
+        fAppName.set(info, appName);
+        Field fVipAddress = InstanceInfo.class.getDeclaredField(vipAddressFieldName);
+        fVipAddress.setAccessible(true);
+        fVipAddress.set(info, vipAddress);
+
+        ApplicationInfoManager.getInstance().setInstanceStatus(InstanceStatus.UP);
+        // InstanceInfo nextServerInfo = null;
+        // while (nextServerInfo == null) {
+        // try {
+        // nextServerInfo = DiscoveryManager.getInstance().getDiscoveryClient().getNextServerFromEureka(vipAddress, false);
+        // } catch (Throwable e) {
+        // log.info("Waiting for service to register with eureka..");
+        // }
+        // }
+    }
+}
