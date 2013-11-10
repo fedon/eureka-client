@@ -6,6 +6,8 @@ import java.net.URI;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.fedon.discoverable.resource.CauResource;
+import org.fedon.discoverable.resource.HelloResource;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
@@ -40,13 +42,14 @@ public class Main {
         log.info("app name: " + appName);
         // create a resource config that scans for JAX-RS resources and providers
         // in org.fedon.discoverable package
-        final ResourceConfig rc = new ResourceConfig().packages(appName);
+        final ResourceConfig rc = new ResourceConfig().register(HelloResource.class).register(CauResource.class);
 
         // support for JSON on the service provided by jersey-media-moxy package
 
         // create and start a new instance of grizzly http server
         // exposing the Jersey application at BASE_URI
-        HttpServer server = GrizzlyHttpServerFactory.createHttpServer(URI.create(baseUri + configInstance.getStringProperty("server.port", "18080")),
+        HttpServer server = GrizzlyHttpServerFactory.createHttpServer(
+                URI.create(baseUri + configInstance.getStringProperty("server.port", "18080").get()),
                 rc);
         try {
             registerWithEureka(appName, appName);
@@ -57,6 +60,8 @@ public class Main {
         } catch (NoSuchFieldException e) {
             log.warn("app registration failed", e);
         } catch (IllegalAccessException e) {
+            log.warn("app registration failed", e);
+        } catch (Exception e) {
             log.warn("app registration failed", e);
         }
         // HttpHandler handler = server.getServerConfiguration().getHttpHandlers().keySet().iterator().next(); // may be used to reconstruct base URI
@@ -91,7 +96,8 @@ public class Main {
         // Register with Eureka
         EurekaInstanceConfig instanceConfig = new MyDataCenterInstanceConfig();
         // instanceConfig.
-        DiscoveryManager.getInstance().initComponent(instanceConfig, new DefaultEurekaClientConfig());
+        DefaultEurekaClientConfig euConf = new DefaultEurekaClientConfig();
+        DiscoveryManager.getInstance().initComponent(instanceConfig, euConf);
 
         // TODO setup runtime values
         String appNameFieldName = "appName";

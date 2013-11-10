@@ -34,6 +34,7 @@ public class AgoraDSConnector extends AgoraConnector {
     public ClientResponse apply(final ClientRequest request) {
         request.setUri(eurekaUri(request.getUri()));
         logger.debug("Invoke Histrix command -- " + request.getUri().getPath());
+        logger.debug("Application name: " + appName);
 
         return _apply(request);
     }
@@ -42,6 +43,7 @@ public class AgoraDSConnector extends AgoraConnector {
     public Future<?> apply(final ClientRequest request, final AsyncConnectorCallback callback) {
         request.setUri(eurekaUri(request.getUri()));
         logger.debug("Invoke async Histrix command -- " + request.getUri());
+        logger.debug("Application name: " + appName);
 
         return _apply(request, callback);
     }

@@ -24,19 +24,22 @@ import com.netflix.discovery.DiscoveryManager;
  */
 public abstract class AgoraConnector extends HttpUrlConnector {
     private static final String PROTO = "http://";
-    Logger logger = LoggerFactory.getLogger(getClass());
+    private Logger log = LoggerFactory.getLogger(getClass());
     public static final String dynamicURIPartTemplate = "eureka";
     public static final String prefixProp = "resource.prefix";
-    public static final String vipAddressProp = "eureka.vip";
+    public static final String vipAddressProp = "eureka.instance.vip";
+    public static final String appNameProp = "eureka.app.name";
 
     // TODO find proper solution for alternative resource implementation
     private String vipAddress;
     private String prefix;
+    protected String appName;
 
     public AgoraConnector(Configuration configuration) {
         super(configuration);
         prefix = (String) configuration.getProperty(prefixProp);
         vipAddress = (String) configuration.getProperty(vipAddressProp);
+        appName = (String) configuration.getProperty(appNameProp);
     }
 
     /**
@@ -66,6 +69,7 @@ public abstract class AgoraConnector extends HttpUrlConnector {
         if (prefix != null) {
             result += "/" + prefix;
         }
+        log.debug(" -- " + result);
         return result;
     }
 }

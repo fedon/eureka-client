@@ -8,7 +8,7 @@ import org.fedon.discoverable.Cau;
  * @author Dmytro Fedonin
  *
  */
-@Path("/cau")
+@Path("/bye")
 public class CauResource implements Cau {
     @Override
     public String getForeval() {

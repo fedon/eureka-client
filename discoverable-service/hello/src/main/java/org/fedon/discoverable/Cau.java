@@ -1,12 +1,14 @@
 package org.fedon.discoverable;
 
 import javax.ws.rs.GET;
+import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 /**
  * Root resource interface 2
  */
+@Path("/cau")
 public interface Cau {
 
     /**
