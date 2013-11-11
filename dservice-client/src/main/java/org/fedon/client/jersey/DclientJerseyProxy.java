@@ -27,8 +27,8 @@ public class DclientJerseyProxy {
 
     public static void main(String[] args) throws Exception {
         Configuration configuration = new ClientConfig();
-        configuration.getProperties().put(AgoraConnector.appNameProp, Hello.class.getPackage());
-        configuration.getProperties().put(AgoraConnector.vipAddressProp, Hello.class.getPackage());
+        configuration.getProperties().put(AgoraConnector.appNameProp, Hello.class.getPackage().getName());
+        configuration.getProperties().put(AgoraConnector.vipAddressProp, Hello.class.getPackage().getName());
         // prefix is to be set only for alternative implementation from external config
         String prefix = null; // for now default implementation is used
         configuration.getProperties().put(AgoraConnector.prefixProp, prefix);

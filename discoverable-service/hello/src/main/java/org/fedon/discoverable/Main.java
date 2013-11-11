@@ -29,7 +29,7 @@ public class Main {
     private final static Log log = LogFactory.getLog(Main.class);
     // Base URI the Grizzly HTTP server will listen on
     public static final String baseUri = "http://localhost:";
-    public static final String appName = Hello.class.getPackage().toString().substring(8); // in the real app this approach will require to limit one
+    public static final String appName = Hello.class.getPackage().getName(); // in the real app this approach will require to limit one
                                                                                            // service to one package in the API project
 
     private static final DynamicPropertyFactory configInstance = com.netflix.config.DynamicPropertyFactory.getInstance();
@@ -48,7 +48,7 @@ public class Main {
 
         // create and start a new instance of grizzly http server
         // exposing the Jersey application at BASE_URI
-        HttpServer server = GrizzlyHttpServerFactory.createHttpServer(
+        HttpServer server = GrizzlyHttpServerFactory.createHttpServer( // eureka configuration property names should go to global Constants
                 URI.create(baseUri + configInstance.getStringProperty("eureka.port", "18080").get()),
                 rc);
         try {
