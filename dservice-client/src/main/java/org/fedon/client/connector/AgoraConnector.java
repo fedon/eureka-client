@@ -22,7 +22,7 @@ import com.netflix.discovery.DiscoveryManager;
  * @author Dmytro Fedonin
  * 
  */
-public abstract class AgoraConnector extends HttpUrlConnector {
+public class AgoraConnector extends HttpUrlConnector {
     private static final String PROTO = "http://";
     private Logger log = LoggerFactory.getLogger(getClass());
     public static final String dynamicURIPartTemplate = "eureka";
@@ -31,8 +31,8 @@ public abstract class AgoraConnector extends HttpUrlConnector {
     public static final String appNameProp = "eureka.app.name";
 
     // TODO find proper solution for alternative resource implementation
-    private String vipAddress;
-    private String prefix;
+    String vipAddress;
+    String prefix;
     protected String appName;
 
     public AgoraConnector(Configuration configuration) {
@@ -59,6 +59,7 @@ public abstract class AgoraConnector extends HttpUrlConnector {
 
     protected URI eurekaUri(URI uri) {
         String str = uri.toString();
+        // TODO remove static call
         InstanceInfo info = DiscoveryManager.getInstance().getDiscoveryClient().getNextServerFromEureka(vipAddress, false);
         String replacement = str.replaceFirst(dynamicURIPartTemplate, buildHostPort(info.getHostName(), info.getPort()));
         return UriBuilder.fromUri(replacement).build();
