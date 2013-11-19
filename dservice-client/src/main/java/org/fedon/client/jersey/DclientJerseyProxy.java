@@ -1,47 +1,94 @@
 package org.fedon.client.jersey;
 
 import java.util.Collections;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.core.Configuration;
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.Form;
 import javax.ws.rs.core.MultivaluedHashMap;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.fedon.client.connector.AgoraConnector;
 import org.fedon.client.connector.AgoraDSConnector;
+import org.fedon.client.protector.NetworkProtector;
 import org.fedon.discoverable.Hello;
+import org.fedon.matrix.model.Matrix;
+import org.fedon.matrix.rest.MatrixIf;
 import org.glassfish.jersey.client.ClientConfig;
 import org.glassfish.jersey.client.proxy.WebResourceFactory;
+import org.glassfish.jersey.jackson.JacksonFeature;
+import org.glassfish.jersey.server.ResourceConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
+ * Demo client to be use with Matrix Jersey server.
+ * 
  * @author Dmytro Fedonin
  * 
  */
 public class DclientJerseyProxy {
-    private final static Log log = LogFactory.getLog(DclientJerseyProxy.class);
-    static String eurekaBase = "http://localhost:8080/eureka/v2";
+    static private Logger log = LoggerFactory.getLogger(DclientJerseyProxy.class);
 
+    // static String eurekaBase = "http://localhost:8080/eureka/v2";
+    static Hello hello;
+    static MatrixIf matrix;
+
+    // @Inject
+    NetworkProtector protector;
+
+    /**
+     * @param args
+     *            if the first argument is not empty it is appended to base dependency uri. For instance /service/name.
+     * @throws Exception
+     */
     public static void main(String[] args) throws Exception {
-        Configuration configuration = new ClientConfig();
-        configuration.getProperties().put(AgoraConnector.appNameProp, Hello.class.getPackage().getName());
-        configuration.getProperties().put(AgoraConnector.vipAddressProp, Hello.class.getPackage().getName());
+        ResourceConfig configuration = new ResourceConfig();
+        configuration.property(AgoraConnector.appNameProp, Hello.class.getPackage().getName());
+        configuration.property(AgoraConnector.vipAddressProp, Hello.class.getPackage().getName());
         // prefix is to be set only for alternative implementation from external config
         String prefix = null; // for now default implementation is used
-        configuration.getProperties().put(AgoraConnector.prefixProp, prefix);
-        ClientConfig cc = new ClientConfig().connector(new AgoraDSConnector(configuration));
+        configuration.property(AgoraConnector.prefixProp, prefix);
+        ClientConfig cc = new ClientConfig().register(JacksonFeature.class).connector(new AgoraDSConnector(configuration));
         Client resource = ClientBuilder.newClient(cc);
-        Hello hello = WebResourceFactory.newResource(
-                Hello.class, 
-                resource.target(AgoraConnector.dynamicURIPartTemplate), 
+        // hello = WebResourceFactory.newResource(
+        // Hello.class,
+        matrix = WebResourceFactory.newResource(MatrixIf.class,
+                resource.target(AgoraConnector.dynamicURIPartTemplate + (args.length > 0 ? args[0] : "")),
                 prefix != null, // ignoreResourcePath should be false for alternative invocation
                 new MultivaluedHashMap<String, Object>(), 
                 Collections.<Cookie>emptyList(),  
                 new Form());
 
-        log.info("Got a message: " + hello.getIt());
+        log.info("Got a message: " + matrix.supportedOps());
+        new DclientJerseyProxy().tryIt();
+    }
+
+    void tryIt() throws InterruptedException, ExecutionException {
+        // Future<String> futureStr = protector.async().protect(hello.getIt());
+        protector = new NetworkProtector();
+        // Async call protected example String
+        Future<String> futureStr = protector.async(String.class).protectAsync(matrix.supportedOps());
+        log.info("Got a future: " + futureStr);
+        log.info(" future string is: " + futureStr.get());
+        // Async call protected example Matrix
+        Future<Matrix> futureMatrix = protector.async(Matrix.class).protectAsync(matrix.single());
+        log.info("Got a future: " + futureMatrix);
+        do {
+            if (futureMatrix.isCancelled()) {
+                log.info("canceled ------------------");
+                return;
+            }
+            log.info("waiting for matrix... " + futureMatrix.isDone());
+            Thread.sleep(2000);
+        } while (!futureMatrix.isDone());
+        Matrix result = futureMatrix.get();
+        log.info("async MATRIX is HERE ==> " + result);
+
+        // Sync call protected example Matrix
+        result = protector.sync().protectSync(matrix.trans(result));
+        log.info("sync trans MATRIX is HERE ==> " + result);
     }
 }

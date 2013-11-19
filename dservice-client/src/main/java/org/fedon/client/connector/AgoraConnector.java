@@ -14,22 +14,25 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.netflix.appinfo.InstanceInfo;
-import com.netflix.discovery.DiscoveryManager;
 
 /**
- * Perhaps it should be in core project. But for refactoring/demo purpose I leave it here close to API.
+ * Perhaps it should be in core project. But for refactoring/demo purpose I leave it here close to client.
  * 
  * @author Dmytro Fedonin
  * 
  */
 public class AgoraConnector extends HttpUrlConnector {
-    private static final String PROTO = "http://";
     private Logger log = LoggerFactory.getLogger(getClass());
+    public static final ThreadLocal<Boolean> doAsyncProtection = new ThreadLocal<>(); // for demonstration only
+    public static final ThreadLocal<AsyncConnectorCallback> callBackHolder = new ThreadLocal<>(); // for demonstration only
+    private static final String PROTO = "http://";
     public static final String dynamicURIPartTemplate = "eureka";
     public static final String prefixProp = "resource.prefix";
     public static final String vipAddressProp = "eureka.instance.vip";
     public static final String appNameProp = "eureka.app.name";
 
+    // @Inject
+    // Provider<RoutingContext> routingContextProvider;
     // TODO find proper solution for alternative resource implementation
     String vipAddress;
     String prefix;
@@ -60,13 +63,17 @@ public class AgoraConnector extends HttpUrlConnector {
     protected URI eurekaUri(URI uri) {
         String str = uri.toString();
         // TODO remove static call
-        InstanceInfo info = DiscoveryManager.getInstance().getDiscoveryClient().getNextServerFromEureka(vipAddress, false);
-        String replacement = str.replaceFirst(dynamicURIPartTemplate, buildHostPort(info.getHostName(), info.getPort()));
+        InstanceInfo info = null;// DiscoveryManager.getInstance().getDiscoveryClient().getNextServerFromEureka(vipAddress, false);
+        String replacement = str.replaceFirst(dynamicURIPartTemplate, buildHostPort(info));
         return UriBuilder.fromUri(replacement).build();
     }
 
-    String buildHostPort(String host, int port) {
-        String result = PROTO + host + ":" + port;
+    String buildHostPort(InstanceInfo info) {
+        if (info == null) {
+            // return "replacement";
+            return "http://localhost:8080";
+        }
+        String result = PROTO + info.getHostName() + ":" + info.getPort();
         if (prefix != null) {
             result += "/" + prefix;
         }
