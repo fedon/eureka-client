@@ -35,8 +35,12 @@ public class NetworkProtector {
         return this;
     }
 
+    public <T> NetworkProtector async() {
+        return async(null);
+    }
+
     public <T> Future<T> protectAsync(T var) {
-        // TODO possibly get return type in runtime / get it from aspect or body reader?
+        // TODO if return type is String resolver body reader won't be called, if there is a reason to do something?
         log.debug("___ intermediate result is: {}", var);
         @SuppressWarnings("unchecked")
         Future<T> result = futureHoler.get();

@@ -46,18 +46,18 @@ public class AgoraDSConnector extends AgoraConnector {
         final AsyncConnectorCallback callback = callBackHolder.get();
         // TODO hystrix command constructed here
         if (doAsyncProtection.get()) { // async ==> cmd.queue();
-            logger.info("++++ ASYNC ++++");
             new Thread() {
 
                 @Override
                 public void run() {
+                    logger.info("++++ ASYNC thread ++++");
                     callback.response(_apply(request));
 
                 }
             }.start(); // demo only
-            // next line could be used for runtime writer based return type discovery
-            // request.abortWith(Response.status(Response.Status.OK).entity("type magic").build());
-            return new ClientResponse(Response.Status.NO_CONTENT, request);
+            // set resolver media type and resolver magic for runtime reader based return type discovery
+            return new ClientResponse(request, Response.status(Response.Status.OK).type(resolverType).entity(resolverMagic).build());
+            // return new ClientResponse(Response.Status.NO_CONTENT, request);
         }
         logger.info(".... sync ....");
         return _apply(request); // sync ==> cmd.execute();

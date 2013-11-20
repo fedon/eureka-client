@@ -9,9 +9,11 @@ import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.Form;
 import javax.ws.rs.core.MultivaluedHashMap;
+import javax.ws.rs.ext.MessageBodyReader;
 
 import org.fedon.client.connector.AgoraConnector;
 import org.fedon.client.connector.AgoraDSConnector;
+import org.fedon.client.protector.AsyncTypeProvider;
 import org.fedon.client.protector.NetworkProtector;
 import org.fedon.discoverable.Hello;
 import org.fedon.matrix.model.Matrix;
@@ -22,6 +24,8 @@ import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import ch.qos.logback.classic.Level;
 
 /**
  * Demo client to be use with Matrix Jersey server.
@@ -45,16 +49,25 @@ public class DclientJerseyProxy {
      * @throws Exception
      */
     public static void main(String[] args) throws Exception {
+        Logger debug = LoggerFactory.getLogger(AsyncTypeProvider.class);
+        if (debug instanceof ch.qos.logback.classic.Logger) {
+            ch.qos.logback.classic.Logger mod = (ch.qos.logback.classic.Logger) debug;
+            mod.setLevel(Level.DEBUG);
+        } else {
+            log.info("logback binding failed");
+        }
+
         ResourceConfig configuration = new ResourceConfig();
         configuration.property(AgoraConnector.appNameProp, Hello.class.getPackage().getName());
         configuration.property(AgoraConnector.vipAddressProp, Hello.class.getPackage().getName());
         // prefix is to be set only for alternative implementation from external config
         String prefix = null; // for now default implementation is used
         configuration.property(AgoraConnector.prefixProp, prefix);
-        ClientConfig cc = new ClientConfig().register(JacksonFeature.class).connector(new AgoraDSConnector(configuration));
+        // configure Jersey client
+        ClientConfig cc = new ClientConfig().register(JacksonFeature.class).register(AsyncTypeProvider.class, MessageBodyReader.class)
+                .connector(new AgoraDSConnector(configuration));
         Client resource = ClientBuilder.newClient(cc);
-        // hello = WebResourceFactory.newResource(
-        // Hello.class,
+        // create client proxy
         matrix = WebResourceFactory.newResource(MatrixIf.class,
                 resource.target(AgoraConnector.dynamicURIPartTemplate + (args.length > 0 ? args[0] : "")),
                 prefix != null, // ignoreResourcePath should be false for alternative invocation
@@ -62,19 +75,19 @@ public class DclientJerseyProxy {
                 Collections.<Cookie>emptyList(),  
                 new Form());
 
+        // not protected use
         log.info("Got a message: " + matrix.supportedOps());
         new DclientJerseyProxy().tryIt();
     }
 
     void tryIt() throws InterruptedException, ExecutionException {
-        // Future<String> futureStr = protector.async().protect(hello.getIt());
         protector = new NetworkProtector();
-        // Async call protected example String
+        // Async call protected example with explicit return type. String is default return type in Jersey so it will work without type resolving.
         Future<String> futureStr = protector.async(String.class).protectAsync(matrix.supportedOps());
         log.info("Got a future: " + futureStr);
         log.info(" future string is: " + futureStr.get());
-        // Async call protected example Matrix
-        Future<Matrix> futureMatrix = protector.async(Matrix.class).protectAsync(matrix.single());
+        // Async call protected example with auto-detected Matrix type. AsyncTypeProvider will set callback type.
+        Future<Matrix> futureMatrix = protector.async().protectAsync(matrix.single());
         log.info("Got a future: " + futureMatrix);
         do {
             if (futureMatrix.isCancelled()) {

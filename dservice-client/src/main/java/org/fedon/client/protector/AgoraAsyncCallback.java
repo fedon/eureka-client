@@ -63,4 +63,8 @@ public class AgoraAsyncCallback<T> implements AsyncConnectorCallback {
     void setType(Class<T> type) {
         this.type = type;
     }
+
+    Class<T> getType() {
+        return type;
+    }
 }
