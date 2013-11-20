@@ -66,7 +66,7 @@ public class DclientJerseyProxy {
         configuration.property(AgoraConnector.prefixProp, prefix);
         // configure Jersey client
         ClientConfig cc = new ClientConfig().register(JacksonFeature.class).register(AsyncTypeFeature.class)
-                .register(AuthOutFilter.class)
+                .register(AuthOutFilter.class) // to see it is invoked in the main thread
                 .connector(new AgoraDSConnector(configuration));
         Client resource = ClientBuilder.newClient(cc);
         // create client proxy
