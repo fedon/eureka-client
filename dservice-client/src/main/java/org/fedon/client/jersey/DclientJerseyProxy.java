@@ -9,10 +9,11 @@ import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.Form;
 import javax.ws.rs.core.MultivaluedHashMap;
-import javax.ws.rs.ext.MessageBodyReader;
 
 import org.fedon.client.connector.AgoraConnector;
 import org.fedon.client.connector.AgoraDSConnector;
+import org.fedon.client.filter.AuthOutFilter;
+import org.fedon.client.protector.AsyncTypeFeature;
 import org.fedon.client.protector.AsyncTypeProvider;
 import org.fedon.client.protector.NetworkProtector;
 import org.fedon.discoverable.Hello;
@@ -64,7 +65,8 @@ public class DclientJerseyProxy {
         String prefix = null; // for now default implementation is used
         configuration.property(AgoraConnector.prefixProp, prefix);
         // configure Jersey client
-        ClientConfig cc = new ClientConfig().register(JacksonFeature.class).register(AsyncTypeProvider.class, MessageBodyReader.class)
+        ClientConfig cc = new ClientConfig().register(JacksonFeature.class).register(AsyncTypeFeature.class)
+                .register(AuthOutFilter.class)
                 .connector(new AgoraDSConnector(configuration));
         Client resource = ClientBuilder.newClient(cc);
         // create client proxy
