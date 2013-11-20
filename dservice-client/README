@@ -1,0 +1,13 @@
+This project is mainly to illustrate protective semantics support for HysCmd classes replacement.
+
+The semantics is demonstrated in DclientJerseyProxy class. IT is runnable. The only argument it accepts is server URI prefix. Client is configured to use
+matrixREST-jersey project https://github.com/fedon/RESTInjection/tree/master/jersey/server.
+If you run the server with maven
+
+mvn jetty:run,
+
+then DclientJerseyProxy should be run with argument
+
+/matrixREST-jersey/jersey.
+
+One of the server methods matrix.single() is implemented with 10 seconds pause to provide better asynchronous experience.
