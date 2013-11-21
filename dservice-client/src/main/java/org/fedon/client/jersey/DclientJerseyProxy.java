@@ -72,7 +72,7 @@ public class DclientJerseyProxy {
         // create client proxy
         matrix = WebResourceFactory.newResource(MatrixIf.class,
                 resource.target(AgoraConnector.dynamicURIPartTemplate + (args.length > 0 ? args[0] : "")),
-                prefix != null, // ignoreResourcePath should be false for alternative invocation
+                prefix != null, // ignoreResourcePath should be true for alternative invocation
                 new MultivaluedHashMap<String, Object>(), 
                 Collections.<Cookie>emptyList(),  
                 new Form());
